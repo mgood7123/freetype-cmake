@@ -1,0 +1,9 @@
+[submodule "libpng"]
+	path = libpng
+	url = https://github.com/glennrp/libpng
+[submodule "brotli"]
+	path = brotli
+	url = https://github.com/google/brotli
+[submodule "harfbuzz"]
+	path = harfbuzz
+	url = https://github.com/harfbuzz/harfbuzz
