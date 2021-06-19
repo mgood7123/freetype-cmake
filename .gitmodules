@@ -7,3 +7,7 @@
 [submodule "harfbuzz"]
 	path = harfbuzz
 	url = https://github.com/harfbuzz/harfbuzz
+[submodule "bzip2"]
+	path = bzip2
+	url = https://github.com/sergiud/bzip2
+	branch = cmake
