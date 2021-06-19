@@ -111,6 +111,26 @@ macro(freetype_cmake_include_freetype path_to_self)
             harfbuzz-subset
             harfbuzz
     )
+    if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+        # override FREETYPE_LIBRARY
+        set(
+                FREETYPE_LIBRARY
+                ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libFREETYPE_CMAKE_LIB_FREETYPE.a
+        )
+    else()
+        freetype_cmake_set_library_prefix(
+                ${CMAKE_CURRENT_BINARY_DIR}/libpng
+                ${CMAKE_CURRENT_BINARY_DIR}/bzip2
+                ${CMAKE_CURRENT_BINARY_DIR}/brotli
+                ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz
+                ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4
+        )
+        # override FREETYPE_LIBRARY
+        set(
+                FREETYPE_LIBRARY
+                ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4/libFREETYPE_CMAKE_LIB_FREETYPE.a
+        )
+    endif()
 endmacro()
 
 get_directory_property(FREETYPE_CMAKE_IS_SUB_DIRECTORY PARENT_DIRECTORY)
