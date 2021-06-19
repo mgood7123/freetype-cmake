@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(FREEMAKE_CMAKE)
+project(FREETYPE_CMAKE)
 
 # detect if we are sub project
 get_directory_property(FREETYPE_CMAKE_IS_SUB_DIRECTORY PARENT_DIRECTORY)
@@ -30,18 +30,18 @@ if(NOT COMMAND testBuilder_build)
 endif()
 
 # setup sources
-testBuilder_add_source(FREEMAKE_CMAKE_LIB_BZIP2 empty.cpp)
-testBuilder_add_source(FREEMAKE_CMAKE_LIB_LIBPNG empty.cpp)
-testBuilder_add_source(FREEMAKE_CMAKE_LIB_BROTLIDEC empty.cpp)
-testBuilder_add_source(FREEMAKE_CMAKE_LIB_HARFBUZZ empty.cpp)
-testBuilder_add_source(FREEMAKE_CMAKE_LIB_FREETYPE empty.cpp)
+testBuilder_add_source(FREETYPE_CMAKE_LIB_BZIP2 empty.cpp)
+testBuilder_add_source(FREETYPE_CMAKE_LIB_LIBPNG empty.cpp)
+testBuilder_add_source(FREETYPE_CMAKE_LIB_BROTLIDEC empty.cpp)
+testBuilder_add_source(FREETYPE_CMAKE_LIB_HARFBUZZ empty.cpp)
+testBuilder_add_source(FREETYPE_CMAKE_LIB_FREETYPE empty.cpp)
 
 # setup libs
-testBuilder_add_library(FREEMAKE_CMAKE_LIB_LIBZIP2 bzip2)
-testBuilder_add_library(FREEMAKE_CMAKE_LIB_LIBPNG libpng)
-testBuilder_add_library(FREEMAKE_CMAKE_LIB_BROTLIDEC brotlidec)
-testBuilder_add_library(FREEMAKE_CMAKE_LIB_HARFBUZZ harfbuzz)
-testBuilder_add_library(FREEMAKE_CMAKE_LIB_FREETYPE freetype)
+testBuilder_add_library(FREETYPE_CMAKE_LIB_LIBZIP2 bzip2)
+testBuilder_add_library(FREETYPE_CMAKE_LIB_LIBPNG libpng)
+testBuilder_add_library(FREETYPE_CMAKE_LIB_BROTLIDEC brotlidec)
+testBuilder_add_library(FREETYPE_CMAKE_LIB_HARFBUZZ harfbuzz)
+testBuilder_add_library(FREETYPE_CMAKE_LIB_FREETYPE freetype)
 
 # build libpng
 
@@ -67,7 +67,7 @@ if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libpng/pnglibconf.h)
 endif()
 
 add_subdirectory(libpng)
-testBuilder_build_static_library(FREEMAKE_CMAKE_LIB_LIBPNG)
+testBuilder_build_static_library(FREETYPE_CMAKE_LIB_LIBPNG)
 
 #./debug_BUILD/libpng/libpng.a
 #./debug_BUILD/libpng/libpng16d.a
@@ -78,7 +78,7 @@ include_directories(${PNG_PNG_INCLUDE_DIR})
 
 # build bzip2
 add_subdirectory(bzip2)
-testBuilder_build_static_library(FREEMAKE_CMAKE_LIB_BZIP2)
+testBuilder_build_static_library(FREETYPE_CMAKE_LIB_BZIP2)
 
 #./debug_BUILD/bzip2/libbz2d.a
 export_cmake_variable(BZIP2_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/bzip2/libbz2d.a)
@@ -88,7 +88,7 @@ include_directories(${BZIP2_INCLUDE_DIR})
 
 # build brotlidec
 add_subdirectory(brotli)
-testBuilder_build_static_library(FREEMAKE_CMAKE_LIB_BROTLIDEC)
+testBuilder_build_static_library(FREETYPE_CMAKE_LIB_BROTLIDEC)
 
 #./debug_BUILD/brotli/libbrotlidec-static.a
 #./debug_BUILD/brotli/libbrotlienc-static.a
@@ -100,7 +100,7 @@ include_directories(${BROTLIDEC_INCLUDE_DIRS})
 
 # build harfbuzz
 add_subdirectory(harfbuzz)
-testBuilder_build_static_library(FREEMAKE_CMAKE_LIB_HARFBUZZ)
+testBuilder_build_static_library(FREETYPE_CMAKE_LIB_HARFBUZZ)
 
 #./debug_BUILD/harfbuzz/libharfbuzz.a
 #./debug_BUILD/harfbuzz/libharfbuzz-subset.a
@@ -111,7 +111,7 @@ include_directories(${HARFBUZZ_INCLUDE_DIRS})
 
 # build freetype
 add_subdirectory(freetype-2.10.4)
-testBuilder_build_static_library(FREEMAKE_CMAKE_LIB_FREETYPE)
+testBuilder_build_static_library(FREETYPE_CMAKE_LIB_FREETYPE)
 
 #./debug_BUILD/freetype-2.10.4/libfreetyped.a
 export_cmake_variable(FREETYPE_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/Debug/lib/libfreetyped.a)
@@ -119,6 +119,6 @@ export_cmake_variable(FREETYPE_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/Debug/lib/lib
 export_cmake_variable(FREETYPE_INCLUDE_DIRS freetype-2.10.4/include)
 include_directories(${FREETYPE_INCLUDE_DIRS})
 
-testBuilder_add_source(test empty.cpp)
-testBuilder_add_library(test freetype)
-testBuilder_build_static_library(test)
+testBuilder_add_source(FREETYPE_CMAKE_TEST empty.cpp)
+testBuilder_add_library(FREETYPE_CMAKE_TEST freetype)
+testBuilder_build_static_library(FREETYPE_CMAKE_TEST)
