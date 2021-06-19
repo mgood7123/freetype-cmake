@@ -128,7 +128,7 @@ macro(freetype_cmake_include_freetype path_to_self)
         # override FREETYPE_LIBRARY
         set(
                 FREETYPE_LIBRARY
-                ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4/libFREETYPE_CMAKE_LIB_FREETYPE.a
+                ${CMAKE_CURRENT_BINARY_DIR}/libFREETYPE_CMAKE_LIB_FREETYPE.a
         )
     endif()
 endmacro()
