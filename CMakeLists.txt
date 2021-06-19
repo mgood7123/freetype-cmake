@@ -7,7 +7,7 @@ set(CMAKE_POLICY_DEFAULT_CMP0075 NEW) # Include file check macros honor ``CMAKE_
 
 # force dependant libs to compile so we have library paths to link to
 
-# freetype requires: libpng, brotlidec, hurfbuzz
+# freetype requires: bzip2, libpng, brotlidec, hurfbuzz
 
 set(FT_WITH_BZIP2 ON CACHE BOOL "" FORCE)
 set(FT_WITH_PNG ON CACHE BOOL "" FORCE)
