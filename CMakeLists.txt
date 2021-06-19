@@ -30,7 +30,5 @@ message(STATUS "freetype complete")
 add_subdirectory(testBuilder)
 
 testBuilder_add_source(test empty.cpp)
-testBuilder_add_library(test libpng)
-testBuilder_add_library(test harfbuzz)
 testBuilder_add_library(test freetype)
 testBuilder_build_shared_library(test)
