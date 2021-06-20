@@ -18,7 +18,7 @@
 
 #include <ft2build.h>
   /* we use our special ftconfig.h file, not the standard one */
-#include FT_CONFIG_CONFIG_H
+#include "ftconfig.h"
 #include <freetype/internal/ftdebug.h>
 #include <freetype/ftsystem.h>
 #include <freetype/fterrors.h>
@@ -62,6 +62,8 @@
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#else
+#error NO FCNTL
 #endif
 
 #include <stdio.h>

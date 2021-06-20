@@ -1,21 +1,13 @@
 cmake_minimum_required(VERSION 3.4)
 project(FREETYPE_CMAKE)
 
-if (APPLE)
-    set(FREETYPE_LIBRARY_SUFFIX dylib)
-elseif(UNIX)
-    set(FREETYPE_LIBRARY_SUFFIX so)
-elseif(WIN32)
-    set(FREETYPE_LIBRARY_SUFFIX lib)
-endif()
-
 macro(freetype_cmake_set_library_prefix libpng bzip2 brotli harfbuzz freetype)
-    set(PNG_LIBRARY ${libpng}/libpng.${FREETYPE_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_LIBRARY_SUFFIX})
-    set(PNG_LIBRARIES ${libpng}/libpng.${FREETYPE_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_LIBRARY_SUFFIX})
-    set(BZIP2_LIBRARIES ${bzip2}/libbz2.${FREETYPE_LIBRARY_SUFFIX})
-    set(BROTLIDEC_LIBRARIES ${brotli}/libbrotlidec.${FREETYPE_LIBRARY_SUFFIX} ${brotli}/libbrotlienc.${FREETYPE_LIBRARY_SUFFIX} ${brotli}/libbrotlicommon.${FREETYPE_LIBRARY_SUFFIX})
-    set(HARFBUZZ_LIBRARIES ${harfbuzz}/libharfbuzz.${FREETYPE_LIBRARY_SUFFIX} ${harfbuzz}/libharfbuzz-subset.${FREETYPE_LIBRARY_SUFFIX})
-    set(FREETYPE_LIBRARY ${freetype}/libfreetyped.${FREETYPE_LIBRARY_SUFFIX})
+    set(PNG_LIBRARY ${libpng}/libpng.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
+    set(PNG_LIBRARIES ${libpng}/libpng.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
+    set(BZIP2_LIBRARIES ${bzip2}/libbz2.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
+    set(BROTLIDEC_LIBRARIES ${brotli}/libbrotlidec.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${brotli}/libbrotlienc.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${brotli}/libbrotlicommon.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
+    set(HARFBUZZ_LIBRARIES ${harfbuzz}/libharfbuzz.a)
+    set(FREETYPE_LIBRARY ${freetype}/libfreetyped.a)
 endmacro()
 
 macro(freetype_cmake_set_library_prefixAll location)
@@ -31,7 +23,7 @@ macro(freetype_cmake_include_freetype path_to_self)
 
     # freetype requires: bzip2, libpng, brotlidec, hurfbuzz
 
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
     set(PNG_SHARED ON CACHE BOOL "" FORCE)
     set(PNG_STATIC OFF CACHE BOOL "" FORCE)
@@ -39,7 +31,14 @@ macro(freetype_cmake_include_freetype path_to_self)
     set(PNG_TESTS OFF CACHE BOOL "" FORCE)
     set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
 
-    set(HB_HAVE_FREETYPE OFF CACHE BOOL "" FORCE)
+    # subset and harfbuff results in duplicate symbols
+    set(HB_BUILD_SUBSET OFF CACHE BOOL "" FORCE)
+    set(HB_HAVE_FREETYPE ON CACHE BOOL "" FORCE)
+    # HB_HAVE_FREETYPE requires cmake standard 11
+    if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 11)
+        set(CMAKE_CXX_STANDARD 11)
+        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    endif()
 
     set(BROTLI_DISABLE_TESTS ON CACHE BOOL "" FORCE)
 
@@ -48,49 +47,53 @@ macro(freetype_cmake_include_freetype path_to_self)
     set(FT_WITH_BROTLI ON CACHE BOOL "" FORCE)
     set(FT_WITH_HARFBUZZ ON CACHE BOOL "" FORCE)
 
-    # build libpng
-    add_subdirectory(${path_to_self}/libpng ${CMAKE_CURRENT_BINARY_DIR}/libpng)
+    if (APPLE)
+        set(FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX dylib)
+    elseif(UNIX)
+        set(FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX so)
+    elseif(WIN32)
+        set(FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX lib)
+    endif()
 
-    set(PNG_PNG_INCLUDE_DIR ${path_to_self}/libpng)
-    include_directories(${PNG_PNG_INCLUDE_DIR})
-    # generated files from libpng during build
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/libpng)
-
-    # build bzip2
-    add_subdirectory(${path_to_self}/bzip2 ${CMAKE_CURRENT_BINARY_DIR}/bzip2)
-
-    set(BZIP2_INCLUDE_DIR ${path_to_self}/bzip2)
-    include_directories(${BZIP2_INCLUDE_DIR})
-
-    # build brotlidec
-    add_subdirectory(${path_to_self}/brotli ${CMAKE_CURRENT_BINARY_DIR}/brotli)
-
-    set(BROTLIDEC_INCLUDE_DIRS ${path_to_self}/brotli/c/include)
-    include_directories(${BROTLIDEC_INCLUDE_DIRS})
-
-    # build harfbuzz
-    add_subdirectory(${path_to_self}/harfbuzz ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz)
-
-    set(HARFBUZZ_INCLUDE_DIRS ${path_to_self}/harfbuzz/src)
-    include_directories(${HARFBUZZ_INCLUDE_DIRS})
-
+    # set library defs
     if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-        freetype_cmake_set_library_prefixAll(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+        set(FREETYPE_PREFEX_LIB_OUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+        freetype_cmake_set_library_prefixAll(${FREETYPE_PREFEX_LIB_OUT_DIR})
     else()
+        set(FREETYPE_PREFEX_LIB_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
         freetype_cmake_set_library_prefix(
-                ${CMAKE_CURRENT_BINARY_DIR}/libpng
-                ${CMAKE_CURRENT_BINARY_DIR}/bzip2
-                ${CMAKE_CURRENT_BINARY_DIR}/brotli
-                ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz
-                ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4
+                ${FREETYPE_PREFEX_LIB_OUT_DIR}/libpng
+                ${FREETYPE_PREFEX_LIB_OUT_DIR}/bzip2
+                ${FREETYPE_PREFEX_LIB_OUT_DIR}/brotli
+                ${FREETYPE_PREFEX_LIB_OUT_DIR}/harfbuzz
+                ${FREETYPE_PREFEX_LIB_OUT_DIR}/freetype-2.10.4
         )
     endif()
 
-    add_subdirectory(${path_to_self}/freetype-2.10.4 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4)
+    # set include defs
+    set(PNG_PNG_INCLUDE_DIR ${path_to_self}/libpng)
+    set(BZIP2_INCLUDE_DIR ${path_to_self}/bzip2)
+    set(BROTLIDEC_INCLUDE_DIRS ${path_to_self}/brotli/c/include)
+    set(HARFBUZZ_INCLUDE_DIRS ${path_to_self}/harfbuzz/src)
     set(FREETYPE_INCLUDE_DIRS ${path_to_self}/freetype-2.10.4/include)
+
+    # include files
+    include_directories(${PNG_PNG_INCLUDE_DIR})
+    # generated files from libpng during build
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/libpng)
+    include_directories(${BZIP2_INCLUDE_DIR})
+    include_directories(${BROTLIDEC_INCLUDE_DIRS})
+    include_directories(${HARFBUZZ_INCLUDE_DIRS})
     include_directories(${FREETYPE_INCLUDE_DIRS})
 
-    # build freetype
+    # prepare projects
+    add_subdirectory(${path_to_self}/libpng ${CMAKE_CURRENT_BINARY_DIR}/libpng)
+    add_subdirectory(${path_to_self}/bzip2 ${CMAKE_CURRENT_BINARY_DIR}/bzip2)
+    add_subdirectory(${path_to_self}/brotli ${CMAKE_CURRENT_BINARY_DIR}/brotli)
+    add_subdirectory(${path_to_self}/harfbuzz ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz)
+    add_subdirectory(${path_to_self}/freetype-2.10.4 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4)
+
+    # build projects
     add_library(FREETYPE_CMAKE_LIB_FREETYPE SHARED ${path_to_self}/empty.cpp)
 
     add_dependencies(bz2 png)
@@ -98,33 +101,24 @@ macro(freetype_cmake_include_freetype path_to_self)
     add_dependencies(brotlienc brotlicommon)
     add_dependencies(brotlidec brotlienc)
     add_dependencies(harfbuzz brotlidec)
-    add_dependencies(harfbuzz-subset harfbuzz)
-    add_dependencies(freetype harfbuzz-subset)
+    add_dependencies(freetype harfbuzz)
+    add_dependencies(FREETYPE_CMAKE_LIB_FREETYPE freetype)
 
-    target_link_libraries(
-            FREETYPE_CMAKE_LIB_FREETYPE
-            png
-            bz2
-            brotlicommon
-            brotlienc
-            brotlidec
-            harfbuzz-subset
-            harfbuzz
-            freetype
-    )
-
-    # override FREETYPE_LIBRARY
-    if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-        set(
-                FREETYPE_LIBRARY
-                ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libFREETYPE_CMAKE_LIB_FREETYPE.${FREETYPE_LIBRARY_SUFFIX}
-        )
-    else()
-        set(
-                FREETYPE_LIBRARY
-                ${CMAKE_CURRENT_BINARY_DIR}/libFREETYPE_CMAKE_LIB_FREETYPE.${FREETYPE_LIBRARY_SUFFIX}
+    set(FREETYPE_CMAKE_LIB_FREETYPE_LIBS png bz2 brotlicommon brotlienc brotlidec)
+    if (APPLE)
+        target_link_libraries(
+                FREETYPE_CMAKE_LIB_FREETYPE
+                ${FREETYPE_CMAKE_LIB_FREETYPE_LIBS}
+                "-framework CoreFoundation"
+                "-framework CoreGraphics"
+                "-framework CoreText"
+                "-Wl,-all_load,${HARFBUZZ_LIBRARIES}"
+                "-Wl,-all_load,${FREETYPE_LIBRARY}"
         )
     endif()
+
+    # override FREETYPE_LIBRARY to point to full freetype library
+    set(FREETYPE_LIBRARY ${FREETYPE_PREFEX_LIB_OUT_DIR}/libFREETYPE_CMAKE_LIB_FREETYPE.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
 endmacro()
 
 get_directory_property(FREETYPE_CMAKE_IS_SUB_DIRECTORY PARENT_DIRECTORY)
