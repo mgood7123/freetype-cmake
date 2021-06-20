@@ -1,13 +1,21 @@
 cmake_minimum_required(VERSION 3.4)
 project(FREETYPE_CMAKE)
 
+if (APPLE)
+    set(FREETYPE_LIBRARY_SUFFIX dylib)
+elseif(UNIX)
+    set(FREETYPE_LIBRARY_SUFFIX so)
+elseif(WIN32)
+    set(FREETYPE_LIBRARY_SUFFIX lib)
+endif()
+
 macro(freetype_cmake_set_library_prefix libpng bzip2 brotli harfbuzz freetype)
-    set(PNG_LIBRARY ${libpng}/libpng.a ${libpng}/libpng16d.a)
-    set(PNG_LIBRARIES ${libpng}/libpng.a ${libpng}/libpng16d.a)
-    set(BZIP2_LIBRARIES ${bzip2}/libbz2d.a)
-    set(BROTLIDEC_LIBRARIES ${brotli}/libbrotlidec-static.a ${brotli}/libbrotlienc-static.a ${brotli}/libbrotlicommon-static.a)
-    set(HARFBUZZ_LIBRARIES ${harfbuzz}/libharfbuzz.a ${harfbuzz}/libharfbuzz-subset.a)
-    set(FREETYPE_LIBRARY ${freetype}/libfreetyped.a)
+    set(PNG_LIBRARY ${libpng}/libpng.${FREETYPE_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_LIBRARY_SUFFIX})
+    set(PNG_LIBRARIES ${libpng}/libpng.${FREETYPE_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_LIBRARY_SUFFIX})
+    set(BZIP2_LIBRARIES ${bzip2}/libbz2.${FREETYPE_LIBRARY_SUFFIX})
+    set(BROTLIDEC_LIBRARIES ${brotli}/libbrotlidec.${FREETYPE_LIBRARY_SUFFIX} ${brotli}/libbrotlienc.${FREETYPE_LIBRARY_SUFFIX} ${brotli}/libbrotlicommon.${FREETYPE_LIBRARY_SUFFIX})
+    set(HARFBUZZ_LIBRARIES ${harfbuzz}/libharfbuzz.${FREETYPE_LIBRARY_SUFFIX} ${harfbuzz}/libharfbuzz-subset.${FREETYPE_LIBRARY_SUFFIX})
+    set(FREETYPE_LIBRARY ${freetype}/libfreetyped.${FREETYPE_LIBRARY_SUFFIX})
 endmacro()
 
 macro(freetype_cmake_set_library_prefixAll location)
@@ -23,20 +31,15 @@ macro(freetype_cmake_include_freetype path_to_self)
 
     # freetype requires: bzip2, libpng, brotlidec, hurfbuzz
 
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 
-    set(PNG_SHARED OFF CACHE BOOL "" FORCE)
-    set(PNG_STATIC ON CACHE BOOL "" FORCE)
+    set(PNG_SHARED ON CACHE BOOL "" FORCE)
+    set(PNG_STATIC OFF CACHE BOOL "" FORCE)
     set(PNG_EXECUTABLES OFF CACHE BOOL "" FORCE)
     set(PNG_TESTS OFF CACHE BOOL "" FORCE)
     set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
 
-    set(HB_HAVE_FREETYPE ON CACHE BOOL "" FORCE)
-    # HB_HAVE_FREETYPE requires cmake standard 11
-    if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 11)
-        set(CMAKE_CXX_STANDARD 11)
-        set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    endif()
+    set(HB_HAVE_FREETYPE OFF CACHE BOOL "" FORCE)
 
     set(BROTLI_DISABLE_TESTS ON CACHE BOOL "" FORCE)
 
@@ -65,58 +68,14 @@ macro(freetype_cmake_include_freetype path_to_self)
     set(BROTLIDEC_INCLUDE_DIRS ${path_to_self}/brotli/c/include)
     include_directories(${BROTLIDEC_INCLUDE_DIRS})
 
-    if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-        freetype_cmake_set_library_prefixAll(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-    else()
-        freetype_cmake_set_library_prefix(libpng bzip2 brotli harfbuzz freetype-2.10.4)
-    endif()
-
-    add_subdirectory(${path_to_self}/freetype-2.10.4 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4)
-    set(FREETYPE_INCLUDE_DIRS ${path_to_self}/freetype-2.10.4/include)
-    include_directories(${FREETYPE_INCLUDE_DIRS})
-
     # build harfbuzz
-    add_library(FREETYPE_CMAKE_LIB_FREETYPE_BASE ${path_to_self}/empty.cpp)
-
-    add_dependencies(libz2 png_static)
-    add_dependencies(brotlicommon-static libz2)
-    add_dependencies(brotlienc-static brotlicommon-static)
-    add_dependencies(brotlidec-static brotlienc-static)
-    add_dependencies(freetype brotlidec-static)
-
-    target_link_libraries(
-            FREETYPE_CMAKE_LIB_FREETYPE_BASE STATIC
-            png_static
-            libz2
-            brotlicommon-static
-            brotlienc-static
-            brotlidec-static
-            freetype
-    )
-
     add_subdirectory(${path_to_self}/harfbuzz ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz)
 
     set(HARFBUZZ_INCLUDE_DIRS ${path_to_self}/harfbuzz/src)
     include_directories(${HARFBUZZ_INCLUDE_DIRS})
 
-    # build
-    add_library(FREETYPE_CMAKE_LIB_FREETYPE ${path_to_self}/empty.cpp)
-
-    # harfbuzz builds before harfbuzz-subset
-    add_dependencies(harfbuzz FREETYPE_CMAKE_LIB_FREETYPE_BASE)
-
-    target_link_libraries(
-            FREETYPE_CMAKE_LIB_FREETYPE STATIC
-            FREETYPE_CMAKE_LIB_FREETYPE_BASE
-            harfbuzz-subset
-            harfbuzz
-    )
     if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-        # override FREETYPE_LIBRARY
-        set(
-                FREETYPE_LIBRARY
-                ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libFREETYPE_CMAKE_LIB_FREETYPE.a
-        )
+        freetype_cmake_set_library_prefixAll(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
     else()
         freetype_cmake_set_library_prefix(
                 ${CMAKE_CURRENT_BINARY_DIR}/libpng
@@ -125,10 +84,45 @@ macro(freetype_cmake_include_freetype path_to_self)
                 ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz
                 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4
         )
-        # override FREETYPE_LIBRARY
+    endif()
+
+    add_subdirectory(${path_to_self}/freetype-2.10.4 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4)
+    set(FREETYPE_INCLUDE_DIRS ${path_to_self}/freetype-2.10.4/include)
+    include_directories(${FREETYPE_INCLUDE_DIRS})
+
+    # build freetype
+    add_library(FREETYPE_CMAKE_LIB_FREETYPE SHARED ${path_to_self}/empty.cpp)
+
+    add_dependencies(bz2 png)
+    add_dependencies(brotlicommon bz2)
+    add_dependencies(brotlienc brotlicommon)
+    add_dependencies(brotlidec brotlienc)
+    add_dependencies(harfbuzz brotlidec)
+    add_dependencies(harfbuzz-subset harfbuzz)
+    add_dependencies(freetype harfbuzz-subset)
+
+    target_link_libraries(
+            FREETYPE_CMAKE_LIB_FREETYPE
+            png
+            bz2
+            brotlicommon
+            brotlienc
+            brotlidec
+            harfbuzz-subset
+            harfbuzz
+            freetype
+    )
+
+    # override FREETYPE_LIBRARY
+    if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
         set(
                 FREETYPE_LIBRARY
-                ${CMAKE_CURRENT_BINARY_DIR}/libFREETYPE_CMAKE_LIB_FREETYPE.a
+                ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libFREETYPE_CMAKE_LIB_FREETYPE.${FREETYPE_LIBRARY_SUFFIX}
+        )
+    else()
+        set(
+                FREETYPE_LIBRARY
+                ${CMAKE_CURRENT_BINARY_DIR}/libFREETYPE_CMAKE_LIB_FREETYPE.${FREETYPE_LIBRARY_SUFFIX}
         )
     endif()
 endmacro()

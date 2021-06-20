@@ -1,4 +1,4 @@
-# FindBrotliDec.cmake
+# findbrotlidec.cmake
 #
 # Copyright (C) 2019-2020 by
 # David Turner, Robert Wilhelm, and Werner Lemberg.
