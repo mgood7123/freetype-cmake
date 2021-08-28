@@ -1,12 +1,15 @@
-[submodule "libpng"]
-	path = libpng
-	url = https://github.com/glennrp/libpng
 [submodule "harfbuzz"]
 	path = harfbuzz
 	url = https://github.com/harfbuzz/harfbuzz
+[submodule "zlib"]
+	path = zlib
+	url = https://github.com/madler/zlib
 [submodule "bzip2"]
 	path = bzip2
-	url = https://github.com/mgood7123/bzip2
+	url = https://github.com/sergiud/bzip2
+[submodule "libpng"]
+	path = libpng
+	url = https://github.com/mgood7123/libpng
 [submodule "brotli"]
 	path = brotli
-	url = https://github.com/mgood7123/brotli
+	url = https://github.com/google/brotli
