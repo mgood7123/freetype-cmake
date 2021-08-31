@@ -193,29 +193,34 @@ else()
     set(NO_WHOLE_ARCHIVE_FLAG "")
 endif()
 
-add_library(zlib SHARED empty.cpp)
-add_library(png SHARED empty.cpp)
-add_library(bzip2 SHARED empty.cpp)
-add_library(brotli SHARED empty.cpp)
-add_library(graphite SHARED empty.cpp)
-add_library(harfbuzz SHARED empty.cpp)
-add_library(freetype SHARED empty.cpp)
+# the name of png, resulting in libpng.so
+# conflicts with the system library libPng.so
+# in /System/Library/Frameworks/ImageIO.framework/Resources/libPng.dylib
+# so add -cmake suffix to every library
 
-add_dependencies(zlib external_project_zlib)
-add_dependencies(png zlib external_project_png)
-add_dependencies(bzip2 external_project_bzip2)
-add_dependencies(brotli external_project_brotli)
-add_dependencies(graphite external_project_graphite)
-add_dependencies(harfbuzz png bzip2 brotli graphite external_project_freetype)
-add_dependencies(freetype harfbuzz)
+add_library(zlib-cmake SHARED empty.cpp)
+add_library(png-cmake SHARED empty.cpp)
+add_library(bzip2-cmake SHARED empty.cpp)
+add_library(brotli-cmake SHARED empty.cpp)
+add_library(graphite-cmake SHARED empty.cpp)
+add_library(harfbuzz-cmake SHARED empty.cpp)
+add_library(freetype-cmake SHARED empty.cpp)
 
-target_include_directories(zlib PUBLIC ${SYSROOT}/include)
-target_include_directories(png PUBLIC ${SYSROOT}/include)
-target_include_directories(bzip2 PUBLIC ${SYSROOT}/include)
-target_include_directories(brotli PUBLIC ${SYSROOT}/include)
-target_include_directories(graphite PUBLIC ${SYSROOT}/include)
-target_include_directories(harfbuzz PUBLIC ${SYSROOT}/include)
-target_include_directories(freetype PUBLIC ${SYSROOT}/include/freetype2)
+add_dependencies(zlib-cmake external_project_zlib)
+add_dependencies(png-cmake zlib-cmake external_project_png)
+add_dependencies(bzip2-cmake external_project_bzip2)
+add_dependencies(brotli-cmake external_project_brotli)
+add_dependencies(graphite-cmake external_project_graphite)
+add_dependencies(harfbuzz-cmake png-cmake bzip2-cmake brotli-cmake graphite-cmake external_project_freetype)
+add_dependencies(freetype-cmake harfbuzz-cmake)
+
+target_include_directories(zlib-cmake PUBLIC ${SYSROOT}/include)
+target_include_directories(png-cmake PUBLIC ${SYSROOT}/include)
+target_include_directories(bzip2-cmake PUBLIC ${SYSROOT}/include)
+target_include_directories(brotli-cmake PUBLIC ${SYSROOT}/include)
+target_include_directories(graphite-cmake PUBLIC ${SYSROOT}/include)
+target_include_directories(harfbuzz-cmake PUBLIC ${SYSROOT}/include)
+target_include_directories(freetype-cmake PUBLIC ${SYSROOT}/include/freetype2)
 
 if (APPLE)
     set(SH dylib)
@@ -244,13 +249,13 @@ endif()
 # libz.a
 
 target_link_libraries(
-        zlib
+        zlib-cmake
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libz.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
 )
 
 target_link_libraries(
-        png
-        zlib
+        png-cmake
+        zlib-cmake
 
         # libpng is a symlink to libpng16d
         # including both libpng and libpng16d results in duplicate symbols
@@ -258,31 +263,31 @@ target_link_libraries(
 )
 
 target_link_libraries(
-        bzip2
+        bzip2-cmake
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libbz2d.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
 )
 target_link_libraries(
-        brotli
+        brotli-cmake
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libbrotlicommon-static.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libbrotlienc-static.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libbrotlidec-static.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
 )
 target_link_libraries(
-        graphite
+        graphite-cmake
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libgraphite2.${ST} ${WHOLE_ARCHIVE_FLAG}
 )
 
 target_link_libraries(
-        harfbuzz
-        png
-        bzip2
-        brotli
-        graphite
+        harfbuzz-cmake
+        png-cmake
+        bzip2-cmake
+        brotli-cmake
+        graphite-cmake
         ${FREETYPE_REQUIRED_APPLE_FRAMEWORKS}
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libharfbuzz.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
         ${WHOLE_ARCHIVE_FLAG} ${SYSROOT}/${R}/libfreetyped.${ST} ${NO_WHOLE_ARCHIVE_FLAG}
 )
 target_link_libraries(
-        freetype
-        harfbuzz
+        freetype-cmake
+        harfbuzz-cmake
 )
