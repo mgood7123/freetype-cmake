@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(FREETYPE_CMAKE)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
-        CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    if(PLATFORM_APPLE)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    if(APPLE)
         set(WHOLE_ARCHIVE_FLAG "-Wl,-all_load" CACHE INTERNAL "all_load flag")
         set(NO_WHOLE_ARCHIVE_FLAG "-Wl,-noall_load" CACHE INTERNAL "noall_load flag")
     else()
@@ -15,8 +14,16 @@ else()
     set(NO_WHOLE_ARCHIVE_FLAG "")
 endif()
 
-if (ANDROID)
-    # for some reason ExternalProject does not work on android
+if (APPLE)
+    set(HAVE_CORE_TEXT TRUE)
+    set(FREETYPE_REQUIRED_APPLE_FRAMEWORKS "-framework CoreFoundation -framework CoreGraphics -framework CoreText")
+else()
+    set(HAVE_CORE_TEXT FALSE)
+    set(FREETYPE_REQUIRED_APPLE_FRAMEWORKS "")
+endif()
+
+if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
+    # for some reason ExternalProject does not work on android nor Qt5 nor Qt6
     # so i cannot link freetype to harfbuzz and harfbuzz to freetype
     # i do not know how to link harfbuzz to freetype on android
     # harfbuzz cannot be found on android
@@ -65,6 +72,7 @@ if (ANDROID)
         endif()
 
         set(BROTLI_DISABLE_TESTS ON CACHE BOOL "" FORCE)
+        set(HB_HAVE_CORETEXT ${HAVE_CORE_TEXT} CACHE BOOL "" FORCE)
 
         set(FT_WITH_BZIP2 ON CACHE BOOL "" FORCE)
         set(FT_WITH_PNG ON CACHE BOOL "" FORCE)
@@ -116,9 +124,6 @@ if (ANDROID)
         add_subdirectory(${path_to_self}/brotli ${CMAKE_CURRENT_BINARY_DIR}/brotli)
         add_subdirectory(${path_to_self}/harfbuzz ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz)
         add_subdirectory(${path_to_self}/freetype-2.10.4 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4)
-
-        # build projects
-        add_library(FREETYPE_CMAKE_LIB_FREETYPE SHARED ${path_to_self}/empty.cpp)
 
         add_dependencies(libz2 png)
         add_dependencies(brotlicommon libz2)
@@ -176,6 +181,7 @@ if (ANDROID)
             png-cmake
             bzip2-cmake
             brotli-cmake
+            ${FREETYPE_REQUIRED_APPLE_FRAMEWORKS}
             ${WHOLE_ARCHIVE_FLAG} ${HARFBUZZ_LIBRARIES} ${NO_WHOLE_ARCHIVE_FLAG}
             ${WHOLE_ARCHIVE_FLAG} ${FREETYPE_LIBRARY} ${NO_WHOLE_ARCHIVE_FLAG}
     )
@@ -306,14 +312,6 @@ else()
     endif()
 
     message(HAVE_ICU = ${HAVE_ICU})
-
-    if (APPLE)
-        set(HAVE_CORE_TEXT TRUE)
-        set(FREETYPE_REQUIRED_APPLE_FRAMEWORKS "-framework CoreFoundation -framework CoreGraphics -framework CoreText")
-    else()
-        set(HAVE_CORE_TEXT FALSE)
-        set(FREETYPE_REQUIRED_APPLE_FRAMEWORKS "")
-    endif()
 
     ExternalProject_Add(
         external_project_harfbuzz
