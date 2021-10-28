@@ -15,6 +15,20 @@ else()
 endif()
 
 if (APPLE)
+    set(SH dylib)
+    set(ST a)
+    set(R lib)
+elseif(UNIX)
+    set(SH so)
+    set(ST a)
+    set(R lib)
+elseif(WIN32)
+    set(SH dll)
+    set(ST lib)
+    set(R lib)
+endif()
+
+if (APPLE)
     set(HAVE_CORE_TEXT TRUE)
     set(FREETYPE_REQUIRED_APPLE_FRAMEWORKS "-framework CoreFoundation -framework CoreGraphics -framework CoreText")
 else()
@@ -32,13 +46,20 @@ if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
 
     # use old cmake that is known to work
 
+    # apple's ImageIO bundles libpng with itself, but it exposes no png.h header
+    # if we try to include our own libpng then we cannot link as ImageIO's bundled libpng conflicts with it
+    #
+    # unfortunately this means we need to build without libpng support :(
+
     macro(freetype_cmake_set_library_prefix libpng bzip2 brotli harfbuzz freetype)
-        set(PNG_LIBRARY ${libpng}/libpng.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
-        set(PNG_LIBRARIES ${libpng}/libpng.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${libpng}/libpng16d.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
-        set(BZIP2_LIBRARIES ${bzip2}/libbz2.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
-        set(BROTLIDEC_LIBRARIES ${brotli}/libbrotlidec.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${brotli}/libbrotlienc.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX} ${brotli}/libbrotlicommon.${FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX})
-        set(HARFBUZZ_LIBRARIES ${harfbuzz}/libharfbuzz.a)
-        set(FREETYPE_LIBRARY ${freetype}/libfreetyped.a)
+        if (NOT APPLE)
+            set(PNG_LIBRARY ${libpng}/libpng.${SH} ${libpng}/libpng16d.${SH})
+            set(PNG_LIBRARIES ${libpng}/libpng.${SH} ${libpng}/libpng16d.${SH})
+        endif()
+        set(BZIP2_LIBRARIES ${bzip2}/libbz2.${SH})
+        set(BROTLIDEC_LIBRARIES ${brotli}/libbrotlidec.${SH} ${brotli}/libbrotlienc.${SH} ${brotli}/libbrotlicommon.${SH})
+        set(HARFBUZZ_LIBRARIES ${harfbuzz}/libharfbuzz.${ST})
+        set(FREETYPE_LIBRARY ${freetype}/libfreetyped.${ST})
     endmacro()
 
     macro(freetype_cmake_set_library_prefixAll location)
@@ -56,10 +77,12 @@ if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
 
         set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-        set(PNG_SHARED ON CACHE BOOL "" FORCE)
-        set(PNG_STATIC OFF CACHE BOOL "" FORCE)
-        set(PNG_EXECUTABLES OFF CACHE BOOL "" FORCE)
-        set(PNG_TESTS OFF CACHE BOOL "" FORCE)
+        if (NOT APPLE)
+            set(PNG_SHARED ON CACHE BOOL "" FORCE)
+            set(PNG_STATIC OFF CACHE BOOL "" FORCE)
+            set(PNG_EXECUTABLES OFF CACHE BOOL "" FORCE)
+            set(PNG_TESTS OFF CACHE BOOL "" FORCE)
+        endif()
         set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
 
         # subset and harfbuff results in duplicate symbols
@@ -75,17 +98,11 @@ if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
         set(HB_HAVE_CORETEXT ${HAVE_CORE_TEXT} CACHE BOOL "" FORCE)
 
         set(FT_WITH_BZIP2 ON CACHE BOOL "" FORCE)
-        set(FT_WITH_PNG ON CACHE BOOL "" FORCE)
+        if (NOT APPLE)
+            set(FT_WITH_PNG ON CACHE BOOL "" FORCE)
+        endif()
         set(FT_WITH_BROTLI ON CACHE BOOL "" FORCE)
         set(FT_WITH_HARFBUZZ ON CACHE BOOL "" FORCE)
-
-        if (APPLE)
-            set(FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX dylib)
-        elseif(UNIX)
-            set(FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX so)
-        elseif(WIN32)
-            set(FREETYPE_CMAKE_LIB_LIBRARY_SUFFIX lib)
-        endif()
 
         # set library defs
         if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
@@ -103,29 +120,37 @@ if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
         endif()
 
         # set include defs
-        set(PNG_PNG_INCLUDE_DIR ${path_to_self}/libpng)
+        if (NOT APPLE)
+            set(PNG_PNG_INCLUDE_DIR ${path_to_self}/libpng)
+        endif()
         set(BZIP2_INCLUDE_DIR ${path_to_self}/bzip2)
         set(BROTLIDEC_INCLUDE_DIRS ${path_to_self}/brotli/c/include)
         set(HARFBUZZ_INCLUDE_DIRS ${path_to_self}/harfbuzz/src)
         set(FREETYPE_INCLUDE_DIRS ${path_to_self}/freetype-2.10.4/include)
 
         # include files
-        include_directories(${PNG_PNG_INCLUDE_DIR})
-        # generated files from libpng during build
-        include_directories(${CMAKE_CURRENT_BINARY_DIR}/libpng)
+        if (NOT APPLE)
+            include_directories(${PNG_PNG_INCLUDE_DIR})
+            # generated files from libpng during build
+            include_directories(${CMAKE_CURRENT_BINARY_DIR}/libpng)
+        endif()
         include_directories(${BZIP2_INCLUDE_DIR})
         include_directories(${BROTLIDEC_INCLUDE_DIRS})
         include_directories(${HARFBUZZ_INCLUDE_DIRS})
         include_directories(${FREETYPE_INCLUDE_DIRS})
 
         # prepare projects
-        add_subdirectory(${path_to_self}/libpng ${CMAKE_CURRENT_BINARY_DIR}/libpng)
+        if (NOT APPLE)
+            add_subdirectory(${path_to_self}/libpng ${CMAKE_CURRENT_BINARY_DIR}/libpng)
+        endif()
         add_subdirectory(${path_to_self}/bzip2 ${CMAKE_CURRENT_BINARY_DIR}/bzip2)
         add_subdirectory(${path_to_self}/brotli ${CMAKE_CURRENT_BINARY_DIR}/brotli)
         add_subdirectory(${path_to_self}/harfbuzz ${CMAKE_CURRENT_BINARY_DIR}/harfbuzz)
         add_subdirectory(${path_to_self}/freetype-2.10.4 ${CMAKE_CURRENT_BINARY_DIR}/freetype-2.10.4)
 
-        add_dependencies(libz2 png)
+        if (NOT APPLE)
+            add_dependencies(libz2 png)
+        endif()
         add_dependencies(brotlicommon libz2)
         add_dependencies(brotlienc brotlicommon)
         add_dependencies(brotlidec brotlienc)
@@ -141,30 +166,42 @@ if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
     target_include_directories(zlib-cmake PUBLIC zlib)
     target_link_libraries(zlib-cmake zlib)
 
-    add_library(png-cmake SHARED empty.cpp)
+    if (NOT APPLE)
+        add_library(png-cmake SHARED empty.cpp)
+    endif()
     add_library(bzip2-cmake SHARED empty.cpp)
     add_library(brotli-cmake SHARED empty.cpp)
     add_library(harfbuzz-cmake SHARED empty.cpp)
     add_library(freetype-cmake SHARED empty.cpp)
 
-    add_dependencies(png-cmake png)
+    if (NOT APPLE)
+        add_dependencies(png-cmake png)
+    endif()
     add_dependencies(bzip2-cmake libz2)
     add_dependencies(brotli-cmake brotlidec brotlienc brotlicommon)
-    add_dependencies(harfbuzz-cmake png-cmake bzip2-cmake brotli-cmake harfbuzz freetype)
+    if (NOT APPLE)
+        add_dependencies(harfbuzz-cmake png-cmake bzip2-cmake brotli-cmake harfbuzz freetype)
+    else()
+        add_dependencies(harfbuzz-cmake bzip2-cmake brotli-cmake harfbuzz freetype)
+    endif()
     add_dependencies(freetype-cmake harfbuzz-cmake)
 
     # include files
-    target_include_directories(png-cmake PUBLIC ${PNG_PNG_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/libpng)
+    if (NOT APPLE)
+        target_include_directories(png-cmake PUBLIC ${PNG_PNG_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/libpng)
+    endif()
     target_include_directories(bzip2-cmake PUBLIC ${BZIP2_INCLUDE_DIR})
     target_include_directories(brotli-cmake PUBLIC ${BROTLIDEC_INCLUDE_DIRS})
     target_include_directories(harfbuzz-cmake PUBLIC ${HARFBUZZ_INCLUDE_DIRS})
     target_include_directories(freetype-cmake PUBLIC ${FREETYPE_INCLUDE_DIRS})
 
-    target_link_libraries(
-            png-cmake
-            zlib-cmake
-            png
-    )
+    if (NOT APPLE)
+        target_link_libraries(
+                png-cmake
+                zlib-cmake
+                png
+        )
+    endif()
 
     target_link_libraries(
             bzip2-cmake
@@ -176,15 +213,26 @@ if (ANDROID OR Qt5_FOUND OR Qt6_FOUND)
             brotlienc
             brotlidec
     )
-    target_link_libraries(
-            harfbuzz-cmake
-            png-cmake
-            bzip2-cmake
-            brotli-cmake
-            ${FREETYPE_REQUIRED_APPLE_FRAMEWORKS}
-            ${WHOLE_ARCHIVE_FLAG} ${HARFBUZZ_LIBRARIES} ${NO_WHOLE_ARCHIVE_FLAG}
-            ${WHOLE_ARCHIVE_FLAG} ${FREETYPE_LIBRARY} ${NO_WHOLE_ARCHIVE_FLAG}
-    )
+    if (NOT APPLE)
+        target_link_libraries(
+                harfbuzz-cmake
+                png-cmake
+                bzip2-cmake
+                brotli-cmake
+                ${FREETYPE_REQUIRED_APPLE_FRAMEWORKS}
+                ${WHOLE_ARCHIVE_FLAG} ${HARFBUZZ_LIBRARIES} ${NO_WHOLE_ARCHIVE_FLAG}
+                ${WHOLE_ARCHIVE_FLAG} ${FREETYPE_LIBRARY} ${NO_WHOLE_ARCHIVE_FLAG}
+        )
+    else()
+        target_link_libraries(
+                harfbuzz-cmake
+                bzip2-cmake
+                brotli-cmake
+                ${FREETYPE_REQUIRED_APPLE_FRAMEWORKS}
+                ${WHOLE_ARCHIVE_FLAG} ${HARFBUZZ_LIBRARIES} ${NO_WHOLE_ARCHIVE_FLAG}
+                ${WHOLE_ARCHIVE_FLAG} ${FREETYPE_LIBRARY} ${NO_WHOLE_ARCHIVE_FLAG}
+        )
+    endif()
     target_link_libraries(
             freetype-cmake
             harfbuzz-cmake
@@ -388,20 +436,6 @@ else()
     target_include_directories(graphite-cmake PUBLIC ${SYSROOT}/include)
     target_include_directories(harfbuzz-cmake PUBLIC ${SYSROOT}/include)
     target_include_directories(freetype-cmake PUBLIC ${SYSROOT}/include/freetype2)
-
-    if (APPLE)
-        set(SH dylib)
-        set(ST a)
-        set(R lib)
-    elseif(UNIX)
-        set(SH so)
-        set(ST a)
-        set(R lib)
-    elseif(WIN32)
-        set(SH dll)
-        set(ST lib)
-        set(R lib)
-    endif()
 
     # libraries:
     # libbrotlicommon-static.a
