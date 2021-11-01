@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(FREETYPE_CMAKE)
 
+set(CMAKE_AUTOUIC OFF)
+set(CMAKE_AUTOMOC OFF)
+set(CMAKE_AUTORCC OFF)
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     if(APPLE)
         set(WHOLE_ARCHIVE_FLAG "-Wl,-all_load" CACHE INTERNAL "all_load flag")
